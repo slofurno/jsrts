@@ -1,0 +1,74 @@
+<html>
+<head>
+<title></title>
+<meta charset="utf-8" />
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+</head>
+
+<body>
+
+ <canvas id="drawing-canvas" width="1400" height="1000"></canvas>
+
+<script>
+
+ 
+
+ 	var myCanvas = document.getElementById('drawing-canvas');
+            var myContext = myCanvas.getContext ? myCanvas.getContext('2d') : null;
+            myContext.fillStyle = "blue";
+
+	var conn = new WebSocket("ws://localhost:555/");
+
+	conn.onopen = function(event) {
+	conn.send('something');
+	};
+
+	conn.onmessage = function (event) {
+
+		var data = JSON.parse(event.data);
+		for (var i in data){
+
+			divlist[data[i].id]=data[i].s;
+
+		}
+		//divlist=data;
+
+	   //console.log(data);
+	};
+
+	var width = myCanvas.width;
+	var height = myCanvas.height;
+	var divlist = {};
+	var halfwidth = 2;
+
+
+	function Draw() { 
+
+		 myContext.clearRect(0,0,myCanvas.width, myCanvas.height)
+
+		  for (var property in divlist) {
+                    if (divlist.hasOwnProperty(property)) {
+
+                        var temp = divlist[property];
+
+                        //console.log(temp);
+
+                        myContext.fillRect((temp.x-halfwidth)|0, (temp.y-halfwidth)|0, halfwidth, halfwidth);
+
+                    }
+      		  }
+
+		 window.requestAnimationFrame(Draw);
+
+    };
+
+	Draw();
+
+
+
+</script>
+
+
+
+</body>
+</html>

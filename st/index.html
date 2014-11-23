@@ -1,0 +1,330 @@
+<html>
+<head>
+<title></title>
+<meta charset="utf-8" />
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+</head>
+
+<body>
+
+ <canvas id="drawing-canvas" width="1400" height="1200"></canvas>
+
+<script>
+
+ 
+
+ 	var myCanvas = document.getElementById('drawing-canvas');
+            var myContext = myCanvas.getContext ? myCanvas.getContext('2d') : null;
+            myContext.fillStyle = "blue";
+
+
+
+    var blist = [];
+    var bheight = 100;
+    var bwidth = 100;
+    var blength = bheight*bwidth;
+
+    for (var i = 0; i<blength; i++){
+
+    	blist[i]=0;
+
+    }
+
+    function addRect(x1, y1, x2, y2){
+
+    	for(var j = y1; j<y2; j++){
+
+    		for(var i = y1; i<y2; i++){
+
+				blist[i+j*bwidth]=1;
+				console.log("1");
+
+    		}
+    	}
+
+    	
+
+    };
+
+    //-1.-1
+    //-1 + -1*100 = -101
+    function transformFromCords(x1,y1){
+
+    	x1 = x1 | 0;
+    	y1 = y1 | 0;
+
+    	var result = (x1 + y1*bwidth);
+  
+
+    	return result;
+
+    };
+
+    function getValue(x1, y1){
+
+    	return blist[transformFromCords(x1,y1)];
+
+    };
+
+
+    addRect(5,5,20,20);
+
+    addRect(54,75,80,96);
+
+
+    addRect(60,30,95,55);
+
+    var neighbors = [];
+    var neighborcosts = [];
+
+    for(var j = -1; j<=1; j++){
+
+    	for (var i = -1; i<=1; i++){
+
+    		if (i !==0 || j!== 0){
+
+    			neighbors.push(transformFromCords(i,j));
+    			neighborcosts.push(Math.sqrt(i*i + j*j));
+    		}
+
+    	}
+    }
+
+    console.log("n "  + neighbors);
+    console.log("nc " + neighborcosts);
+
+
+    /*
+		start
+		add current pos to checked
+		set all neighbors values+push to queue
+		
+		pop off queue
+		set
+
+
+    */
+
+    function Node(x, y, value){
+
+    	this.x=x;
+    	this.y=y;
+    	this.value=value;
+
+    };
+    /*
+    var unvisited = [];
+
+    for (var i = 0; i<bwidth; i++){
+
+    	for (var j = 0; j<bwidth; j++){
+
+    		unvisited.push(new Node(i,j,9000));
+
+    	}
+    }
+	*/
+
+
+
+    var dist = [];
+    var previous = [];
+    var Q = [];
+
+    var current = transformFromCords(60,60);
+    var target = transformFromCords(0,0);
+	dist[current]=0;
+
+    for (var i = 0; i<blength;i++){
+
+    	if (i !== current&&blist[i]===0){
+	    	dist[i]=9000;
+	    	previous[i]=null;
+	    	Q[i]=true;
+    	}
+    	else{
+    		Q[i]=false;
+    	}
+    }
+    
+    
+    function IterateOnce(){
+		console.log("current : " + current + "   target : " + target);
+	    if(current != target){
+
+
+
+	    	for(var n in neighbors){
+
+
+	    		var ineighbor = current*1 + neighbors[n];
+	    		var altdistance = dist[current]+neighborcosts[n];
+
+	    		if (altdistance<dist[ineighbor]&&blist[ineighbor]===0){
+
+	    			dist[ineighbor] = altdistance;
+	    			previous[ineighbor]=current;
+    				//console.log("dist " + ineighbor + " dist " + altdistance);
+	    		}
+	    		
+	    	}
+
+    	current = getMinQ();
+	    	//current = min in Q
+
+	    	
+	    	
+	    	Q[current]=false;
+	    }
+	    else{
+	    	solved=true;
+	
+	    }
+	}
+
+    function getMinQ(){
+
+    	var mindist = 9000;
+    	var mini = -1;
+
+    	for(var i in Q){
+
+    		if (Q[i]===true && dist[i]<mindist){
+    			mindist=dist[i];
+    			mini = i;
+    		}
+
+    	}
+
+    	return mini;
+
+    };
+
+
+    console.log(neighbors);
+
+
+	var divlist = {};
+	var halfwidth = 5;
+
+
+	function Draw() { 
+
+		 myContext.clearRect(0,0,myCanvas.width, myCanvas.height)
+		 IterateOnce();
+
+
+
+
+        for (var i = 0; i < blength; i++){
+        	
+      
+        	
+
+        	if (dist[i]<=255){
+
+
+        		var color;
+    			if (Q[i]===true){
+
+    				color = "green";
+    			}
+    			else{
+
+    				color = "Gray"
+    			}
+
+				var y = (i / bwidth)|0;
+        		var x = i - (y*bwidth);
+
+        		y *= 2*halfwidth;
+        		x *= 2*halfwidth;
+
+    			//var color = "rgb(0," + Math.min(3*dist[i], 255) + ",0)";
+
+    			//console.log(color);
+
+        		myContext.fillStyle= color;
+
+        		myContext.fillRect((x-halfwidth)|0, (y-halfwidth)|0, 2*halfwidth, 2*halfwidth);
+
+			}
+
+        }
+
+
+        for (var i = 0; i < blength; i++){
+        	
+        	if (blist[i]===1){
+
+        		//var x = i % bwidth;
+        		var y = (i / bwidth)|0;
+        		var x = i - (y*bwidth);
+
+        		y *= 2*halfwidth;
+        		x *= 2*halfwidth;
+
+        		myContext.fillStyle= "blue";
+        		myContext.fillRect((x-halfwidth)|0, (y-halfwidth)|0, 2*halfwidth, 2*halfwidth);
+        	}
+        	
+
+  
+
+        }
+
+        if (current>0){
+
+        	var i = current;
+	        var y = (i / bwidth)|0;
+			var x = i - (y*bwidth);
+
+			y *= 2*halfwidth;
+			x *= 2*halfwidth;
+
+	        myContext.fillStyle= "red";
+
+			myContext.fillRect((x-halfwidth)|0, (y-halfwidth)|0, 2*halfwidth, 2*halfwidth);
+
+		}
+
+		if (solved){
+
+	    	var output = [];
+	    	while (typeof previous[current] !== "undefined") {
+
+	    		output.push(current);
+	    		current=previous[current];
+
+	    		var i =current;
+
+	    		var y = (i / bwidth)|0;
+        		var x = i - (y*bwidth);
+
+        		y *= 2*halfwidth;
+        		x *= 2*halfwidth;
+
+        		myContext.fillStyle= "red";
+        		myContext.fillRect((x-halfwidth)|0, (y-halfwidth)|0, 2*halfwidth, 2*halfwidth);
+
+	    	}
+
+	    	console.log(output);
+		}
+		else{
+			window.requestAnimationFrame(Draw);
+		}
+    };
+
+    var solved=false;
+
+	Draw();
+
+
+
+</script>
+
+
+
+</body>
+</html>
