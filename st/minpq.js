@@ -21,6 +21,7 @@ function MinQueue(){
 	this.removeMin = function(){
 
 		var min = _pq[0];
+		var minkey = _keys[min];
 		swap(0, _length--);
 		downHeap(0);
 		_qp[min] = -1;
@@ -32,6 +33,13 @@ function MinQueue(){
 
 	this.decreaseKey = function(index, priority){
 
+		if (_keys[index]<=priority){
+			return false;
+		}
+		
+		_keys[index]=priority;
+		upHeap(_qp[index]);
+		return true;
 		
 
 	}

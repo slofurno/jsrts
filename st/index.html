@@ -3,6 +3,7 @@
 <title></title>
 <meta charset="utf-8" />
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="minpq.js"></script>
 </head>
 
 <body>
@@ -24,6 +25,9 @@
     var bwidth = 100;
     var blength = bheight*bwidth;
 
+     var solved=false;
+
+
     for (var i = 0; i<blength; i++){
 
     	blist[i]=0;
@@ -37,7 +41,7 @@
     		for(var i = y1; i<y2; i++){
 
 				blist[i+j*bwidth]=1;
-				console.log("1");
+				
 
     		}
     	}
@@ -90,8 +94,7 @@
     	}
     }
 
-    console.log("n "  + neighbors);
-    console.log("nc " + neighborcosts);
+    console.log(neighborcosts);
 
 
     /*
@@ -129,7 +132,8 @@
 
     var dist = [];
     var previous = [];
-    var Q = [];
+    //var Q = [];
+    var Q = new MinQueue();
 
     var current = transformFromCords(60,60);
     var target = transformFromCords(0,0);
@@ -138,19 +142,24 @@
     for (var i = 0; i<blength;i++){
 
     	if (i !== current&&blist[i]===0){
-	    	dist[i]=9000;
+
+            dist[i]=9000;
+            Q.insert(i, 9000);
 	    	previous[i]=null;
-	    	Q[i]=true;
+	    	//Q[i]=true;
     	}
     	else{
-    		Q[i]=false;
+
+
+    		//Q[i]=false;
     	}
     }
     
     
     function IterateOnce(){
-		console.log("current : " + current + "   target : " + target);
-	    if(current != target){
+		//console.log("current : " + current + "   target : " + target);
+	   //if(current != target){
+        while(current!=target){
 
 
 
@@ -160,27 +169,52 @@
 	    		var ineighbor = current*1 + neighbors[n];
 	    		var altdistance = dist[current]+neighborcosts[n];
 
+                
 	    		if (altdistance<dist[ineighbor]&&blist[ineighbor]===0){
 
 	    			dist[ineighbor] = altdistance;
 	    			previous[ineighbor]=current;
+                    Q.decreaseKey(ineighbor,altdistance);
+
     				//console.log("dist " + ineighbor + " dist " + altdistance);
 	    		}
+                
+                /*
+                if (Q.decreaseKey(ineighbor,altdistance)){
+
+                    dist[ineighbor] = altdistance;
+                    previous[ineighbor]=current;
+                }
+                */
 	    		
 	    	}
 
-    	current = getMinQ();
+    	//current = getMinQ();
+
+        current = Q.removeMin();
 	    	//current = min in Q
 
 	    	
 	    	
-	    	Q[current]=false;
+	    	//Q[current]=false;
 	    }
+
+        solved=true;
+        
+        /*
 	    else{
 	    	solved=true;
 	
+
 	    }
+        */
 	}
+
+
+
+
+
+
 
     function getMinQ(){
 
@@ -201,7 +235,7 @@
     };
 
 
-    console.log(neighbors);
+    
 
 
 	var divlist = {};
@@ -211,7 +245,7 @@
 	function Draw() { 
 
 		 myContext.clearRect(0,0,myCanvas.width, myCanvas.height)
-		 IterateOnce();
+		 //IterateOnce();
 
 
 
@@ -312,13 +346,26 @@
 	    	console.log(output);
 		}
 		else{
-			window.requestAnimationFrame(Draw);
+			//window.requestAnimationFrame(Draw);
 		}
     };
 
-    var solved=false;
+   
 
-	Draw();
+    var starttime = Date.now();
+
+    IterateOnce();
+
+    var endtime = Date.now();
+
+    var elapsedtime = endtime-starttime;
+
+    console.log("elapsed ms : " +  elapsedtime);
+    //elapsed ms : 12492
+
+
+    Draw();
+	
 
 
 
