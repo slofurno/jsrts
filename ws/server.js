@@ -7,6 +7,9 @@ var wss = new WebSocketServer({port: 555});
 var lasttime = Date.now();
 var currenttime = Date.now();
   
+var NanoTimer = require('nanotimer');
+var timer = new NanoTimer();
+
   var tempbuffer = {};
 wss.on('connection', function(ws) {
     ws.on('message', function(message) {
@@ -28,8 +31,8 @@ var ents = [];
 
 var startloop = function(){
 
-	setInterval(function(){
-
+	//setInterval(function(){
+	timer.setInterval(function(){
 		
 		lasttime = currenttime;
 		currenttime = Date.now();
@@ -43,8 +46,8 @@ var startloop = function(){
 		}
 
 		wss.broadcast(JSON.stringify(tempbuffer));
-	
-	},(1000/30));
+	}, '', '30m');
+	//},(1000/30));
 
 };
 /**
