@@ -1,0 +1,220 @@
+<html>
+<head>
+<title></title>
+<meta charset="utf-8" />
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script type="text/javascript" src="glmatrix.js"></script>
+</head>
+
+<body>
+
+ <canvas id="drawing-canvas" width="1200" height="800"></canvas>
+
+<script>
+// style="width:1200px; height: 800px"
+ 
+	var ks = {87:false, 65:false, 83:false, 68:false};
+	var ks_single = {};
+
+	var HWIDTH =300;
+	var HHEIGHT = 200;
+
+ 	var myCanvas = document.getElementById('drawing-canvas');
+            var context = myCanvas.getContext ? myCanvas.getContext('2d') : null;
+            
+
+
+
+    var offscreenCanvas = document.createElement('canvas');
+            offscreenCanvas.width = 2*HWIDTH;// myCanvas.width;
+            offscreenCanvas.height = 2*HHEIGHT;//myCanvas.height;
+            var ctx = offscreenCanvas.getContext('2d');
+
+            
+
+            ctx.fillStyle = "blue";
+/*
+	var conn = new WebSocket("ws://localhost:555/");
+
+	conn.onopen = function(event) {
+	conn.send('something');
+	};
+
+	conn.onmessage = function (event) {
+
+		var data = JSON.parse(event.data);
+		for (var i in data){
+
+			divlist[data[i].id]=data[i].s;
+
+		}
+		//divlist=data;
+
+	   //console.log(data);
+	};
+*/
+	var width = myCanvas.width;
+	var height = myCanvas.height;
+	var divlist = {};
+	var halfwidth = 2;
+	var MSPEED = 100;
+
+	var OR_0 = mat2.fromValues(1,0,0,1);
+	var OR_90 = mat2.fromValues(0, 1, -1, 0);
+	var OR_180 = mat2.fromValues(-1, 0, 0, -1);
+	var OR_270 = mat2.fromValues(0,-1,1,0);
+
+
+	var ORS = {};
+	ORS[0] = OR_0;
+	ORS[1] = OR_90;
+	ORS[2] = OR_180;
+	ORS[3] = OR_270;
+
+	var m_or = 0;
+
+	var m_s = vec2.create();
+
+	var lasttime = Date.now();
+	var currenttime = Date.now();
+
+
+	function Draw() { 
+
+		lasttime = currenttime;
+		currenttime = Date.now();
+		var dt = (currenttime - lasttime)/1000;
+
+		/*
+		 ctx.clearRect(0,0,myCanvas.width, myCanvas.height)
+
+		  for (var property in divlist) {
+                    if (divlist.hasOwnProperty(property)) {
+
+                        var temp = divlist[property];
+
+                        //console.log(temp);
+
+                        ctx.fillRect((temp.x-halfwidth)|0, (temp.y-halfwidth)|0, halfwidth, halfwidth);
+
+                    }
+      		  }
+      		  */
+      		  	
+
+      		  	var ax = 0;
+      		  	var ay = 0;
+
+              	if (ks[87]) {
+                   ay = -1;
+
+                }
+                else if (ks[83]) {
+                 ay = 1;
+
+                }
+              	if (ks[65]) {
+                   ax = -1;
+
+                }
+                else if (ks[68]) {
+                 ax = 1;
+
+                }
+
+                var m_a = vec2.fromValues(ax,ay);
+
+                var m_v2 = vec2.scale(vec2.create(), m_a, MSPEED*dt);
+
+                var m_s2 = vec2.add(vec2.create(), m_s, m_v2);
+
+                m_s = m_s2;
+
+                if (ks_single[74]) {
+                	ks_single[74]=false;
+                    m_or--;
+
+                }
+                else if (ks_single[75]) {
+                	ks_single[75]=false;
+                    m_or++;
+
+                }
+
+
+                m_or = m_or & 3;
+
+                //console.log("m_s  %s, %s", m_s[0], m_s[1]);
+                //var temp = ORS[m_or];
+                ctx.save();
+                //ctx.clearRect(0,0,2*HWIDTH, 2*HHEIGHT);
+
+                ctx.fillStyle = "gray";
+                ctx.fillRect(0,0,2*HWIDTH, 2*HHEIGHT);
+
+                ctx.fillStyle = "blue";
+
+                ctx.translate(HWIDTH,HHEIGHT);
+                
+                
+                
+                //var HWIDTH =myCanvas.width/2;
+				//var HHEIGHT = myCanvas.height/2;
+                
+                
+                ctx.transform(ORS[m_or][0],ORS[m_or][1],ORS[m_or][2],ORS[m_or][3],m_s[0],m_s[1]);
+                ctx.translate(-100,-25);
+                 
+                 ctx.fillRect(0,0,200,50);
+                 ctx.restore();
+                 //context.clearRect(0,0,4*HWIDTH, 4*HHEIGHT);
+                 context.drawImage(offscreenCanvas, 0, 0, 1200, 800);
+
+		 window.requestAnimationFrame(Draw);
+
+    };
+
+	Draw();
+
+
+	function Mstate(){
+
+		var temp = 5;
+
+		this.print = function(){
+
+			console.log("temp %s %s",temp, 5);
+		};
+
+	};
+
+
+
+
+    $(document).on("keydown", function (e) {
+                
+    	if (ks[e.which]===false){
+
+    		ks_single[e.which]=true;
+    	}
+
+        ks[e.which] = true;
+
+    });
+
+
+
+    $(document).on("keyup", function (e) {
+
+        ks[e.which] = false;
+
+    });
+
+
+
+</script>
+
+
+
+</body>
+</html>
