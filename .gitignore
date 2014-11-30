@@ -43,3 +43,21 @@ Temporary Items
 .apdisk
 
 */node_modules
+ws/test.js
+
+*.resources
+*.myapp
+*.settings
+*.xml
+*.suo
+*.sln
+*.dll
+*.pdb
+*.cache
+*.config
+*.resx
+*.vb
+*.user
+*.vbproj
+
+

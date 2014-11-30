@@ -105,19 +105,19 @@
       		  	var ax = 0;
       		  	var ay = 0;
 
-              	if (ks[87]) {
+              	if (ks[38]) {
                    ay = -1;
 
                 }
-                else if (ks[83]) {
+                else if (ks[40]) {
                  ay = 1;
 
                 }
-              	if (ks[65]) {
+              	if (ks[37]) {
                    ax = -1;
 
                 }
-                else if (ks[68]) {
+                else if (ks[39]) {
                  ax = 1;
 
                 }
@@ -176,6 +176,12 @@
 
 	Draw();
 
+  function getBodyTransform(){
+
+    
+
+  };
+
 
 	function Mstate(){
 
@@ -199,6 +205,7 @@
     	}
 
         ks[e.which] = true;
+        e.preventDefault();
 
     });
 
@@ -207,6 +214,7 @@
     $(document).on("keyup", function (e) {
 
         ks[e.which] = false;
+        e.preventDefault();
 
     });
 
