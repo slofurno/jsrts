@@ -14,12 +14,13 @@
 
 precision mediump float;
 
-
+varying vec2 vTextureCoord;
+uniform sampler2D uTexture;
 
 void main(void) {
 
-
-        gl_FragColor = vec4(0,0.5,0.5,1.0);
+        vec4 fragmentColor = texture2D(uTexture, vec2(vTextureCoord.s, -vTextureCoord.t));
+        gl_FragColor = fragmentColor;
 
 }
 </script>
@@ -30,13 +31,13 @@ attribute vec3 aVertexPosition;
 
 uniform mat4 uPMatrix;
 
-
+attribute vec2 aUVPosition;
 varying vec2 vTextureCoord;
 
 
 void main(void) {
 
-
+vTextureCoord = aUVPosition;
 gl_Position = vec4((aVertexPosition.x/600.0-1.0),-(aVertexPosition.y/400.0-1.0), 0.0, 1.0);
 
 
@@ -104,13 +105,20 @@ gl.uniformMatrix4fv(currentShader.quadVerts, false, quadverts);
 
 shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
 
+var vertbuffer = gl.createBuffer();
 shaderProgram.aVertexPosition = gl.getAttribLocation(shaderProgram, "aVertexPosition");
 gl.enableVertexAttribArray(shaderProgram.aVertexPosition);
-
-
-var vertbuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, vertbuffer);
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([]), gl.DYNAMIC_DRAW);
+
+
+var vertuvbuffer = gl.createBuffer();
+shaderProgram.aUVPosition = gl.getAttribLocation(shaderProgram, "aUVPosition");
+gl.enableVertexAttribArray(shaderProgram.aUVPosition);
+gl.bindBuffer(gl.ARRAY_BUFFER, vertuvbuffer);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([]), gl.DYNAMIC_DRAW);
+
+
 
 shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uTexture");
 
@@ -174,11 +182,15 @@ var currenttime = Date.now();
 var pMatrix = mat4.create();
 var tempv = [];
 var tempvindex = 0;
+var tempuv = [];
+var tempuvindex = 0;
 
 function Draw() { 
 
                 tempv = [];
                 tempvindex = 0;
+                tempuv = [];
+                tempuvindex = 0;
 
                 lasttime = currenttime;
                 currenttime = Date.now();
@@ -253,23 +265,28 @@ function Draw() {
                 gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
 
 
-                var transform = getBodyTransform(m_s[0], m_s[1], m_or);
+                //var transform = getBodyTransform(m_s[0], m_s[1], m_or);
 
                 
 
-                drawSprite(transform, 30,50);
+                drawSprite(m_s[0], m_s[1], m_or, 32,32);
                  
                // console.log("transform " + JSON.stringify(tempv));
 
                 gl.bindBuffer(gl.ARRAY_BUFFER, vertbuffer);
-                //vertbuffer.itemSize = 3;
-                //vertbuffer.numItems = tempv.length;
                 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(tempv), gl.DYNAMIC_DRAW);
                 gl.vertexAttribPointer(shaderProgram.aVertexPosition, 3, 
                         gl.FLOAT, false, 0, 0);
 
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, vertuvbuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(tempuv), gl.DYNAMIC_DRAW);
+                gl.vertexAttribPointer(shaderProgram.aUVPosition, 2, 
+                        gl.FLOAT, false, 0, 0);
+
+
                 gl.activeTexture(gl.TEXTURE0);
-                gl.bindTexture(gl.TEXTURE_2D, texture);
+                gl.bindTexture(gl.TEXTURE_2D, ghosttexture);
                 gl.uniform1i(shaderProgram.samplerUniform, 0);
 
                 gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -293,19 +310,33 @@ function loadSprites(){
 
 };
 
-function drawSprite(transform, width, height){
+function drawSprite(x, y, rot, width, height){
 
-       transform=mat3.transpose(mat3.create(), transform);
+       //transform=mat3.transpose(mat3.create(), transform);
         //console.log(JSON.stringify(transform));
 
-        var ins = [2,0,1,1,2,3];
+        /*
+        
+
+        */
+        var transform = getBodyTransform(x, y, rot);
+
+
+        var ins = [1,0,2,1,2,3];
         var corners = [];
         corners[0] = vec3.transformMat3(vec3.create(),vec3.fromValues(-width, -height, 1), transform);
         corners[1] = vec3.transformMat3(vec3.create(),vec3.fromValues(width, -height, 1), transform);
         corners[2] = vec3.transformMat3(vec3.create(),vec3.fromValues(-width, height, 1), transform);
         corners[3] = vec3.transformMat3(vec3.create(),vec3.fromValues(width, height, 1), transform);
 
-       
+        var uvcords = [];
+        uvcords[0] = [0,0];
+        uvcords[1] = [1,0];
+        uvcords[2] = [0,1];
+        uvcords[3] = [1,1];
+
+
+
         //console.log("transform " + JSON.stringify(corners[0]));
 
         for(var i = 0; i < 6; i ++){
@@ -314,6 +345,8 @@ function drawSprite(transform, width, height){
                 tempv[tempvindex++] = corners[ins[i]][1];
                 tempv[tempvindex++] = corners[ins[i]][2];
 
+                tempuv[tempuvindex++] = uvcords[ins[i]][0];
+                tempuv[tempuvindex++] = uvcords[ins[i]][1];
         }
 
 };
@@ -325,9 +358,27 @@ function getBodyTransform(x,y,rad){
         var c = Math.cos(rad);
         var s = Math.sin(rad);
 
+        /*
+        cosx    -sinx   x
+        sinx    cosx    y
+        0       0       1
+
+
+        */
         
 
         var out = new Float32Array(9);
+
+        out[0]=c;
+        out[1]=s;
+        out[2]=0;
+        out[3]=-s;
+        out[4]=c;
+        out[5]=0;
+        out[6]=x;
+        out[7]=y;
+        out[8]=1;
+        /*
         out[0]=c;
         out[1]=-s;
         out[2]=x;
@@ -337,7 +388,7 @@ function getBodyTransform(x,y,rad){
         out[6]=0;
         out[7]=0;
         out[8]=1;
-
+        */
         return out;
 
 

@@ -1,0 +1,9 @@
+C:\dev\jsrts\jumpandduck\jumpandduck\jumpandduck\bin\jumpandduck.dll.config
+C:\dev\jsrts\jumpandduck\jumpandduck\jumpandduck\bin\jumpandduck.dll
+C:\dev\jsrts\jumpandduck\jumpandduck\jumpandduck\bin\jumpandduck.pdb
+C:\dev\jsrts\jumpandduck\jumpandduck\jumpandduck\bin\jumpandduck.xml
+C:\dev\jsrts\jumpandduck\jumpandduck\jumpandduck\obj\Debug\jumpandduck.Resources.resources
+C:\dev\jsrts\jumpandduck\jumpandduck\jumpandduck\obj\Debug\jumpandduck.vbproj.GenerateResource.Cache
+C:\dev\jsrts\jumpandduck\jumpandduck\jumpandduck\obj\Debug\jumpandduck.dll
+C:\dev\jsrts\jumpandduck\jumpandduck\jumpandduck\obj\Debug\jumpandduck.xml
+C:\dev\jsrts\jumpandduck\jumpandduck\jumpandduck\obj\Debug\jumpandduck.pdb
