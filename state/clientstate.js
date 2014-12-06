@@ -15,6 +15,7 @@ function ClientState(){
         this.bufferindex = 0;
         this.buffer = {};
         this.time = {};
+        this.FRAMETIME = 30;
 
         var startstate = State.create();
         startstate[0] = 500;
@@ -47,6 +48,43 @@ ClientState.prototype.getByTime = function(time){
         
         
         return this.buffer[temp];
+
+};
+
+ClientState.prototype.lerpTime = function(time){
+
+        var i1 = this.bufferindex;
+        var i2 = -1;
+        var attempts = 0;
+        var out = State.create();
+        //var t1 = this.time[temp];
+        //var t2 = -1;
+
+        while (this.time[i1] >= time && attempts++ <=30){
+                
+                i2 = i1;
+                i1--;
+                i1 = i1 & 31;
+        
+
+        }
+
+        
+
+        if (typeof (this.buffer[i1]) === 'undefined') {
+
+        }
+        else if (i2 === -1){
+
+                //State.extrapolate(out, this.buffer[i1]);
+        }
+        else{
+
+                var a = (time - this.time[i1])/(this.time[i2]-this.time[i1]);
+                State.lerp(out, this.buffer[i1], this.buffer[i2], a);
+        }
+
+        return out;
 
 };
 

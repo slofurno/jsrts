@@ -16,9 +16,9 @@ State.create = function(){
 };
 
 //state 1 = older
-State.lerp = function(state1, state2, alpha){
+State.lerp = function(out, state1, state2, alpha){
 
-        var out = State.create();
+        //var out = State.create();
 
         out[0] = state1[0]*(1-alpha) + state2[0]*alpha;
         out[1] = state1[1]*(1-alpha) + state2[1]*alpha;
