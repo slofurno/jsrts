@@ -1,0 +1,439 @@
+<html>
+<head>
+<title></title>
+<meta charset="utf-8" />
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+</head>
+<body>
+<div id="output"></div>
+<canvas id="myCanvas" width="600" height="400"></canvas>
+
+<script>
+
+var c=document.getElementById("myCanvas");
+var ctx=c.getContext("2d");
+
+ctx.font='14px Lucida Console';
+
+var timeoffset = Date.now();
+
+var LINEWIDTH = 80;
+var INDENTSIZE = 8;
+var BUFFERMAX = 1000;
+var LINEHEIGHT = 20;
+
+var _topoffset = 0;
+var _cursorpos = 0;
+var _bufferlen = 1;
+
+var _buffer = new ArrayBuffer(BUFFERMAX);
+var _bufferview = new Uint8Array(_buffer);
+
+_bufferview[0] = 0x0A;
+
+var _inputbuffer = new CommandStack();
+
+var ks = [];
+var ks_single = [];
+//var to = Uint8Array(buffer, 100, 1000);
+
+
+function insertEle(value, offset){
+
+        //_bufferview.set([value], offset);
+        writeArray(_bufferview, [value], offset);
+}
+
+
+function shiftElements(offset, distance){
+
+        //console.log("offset : %d, distance: %d", offset, distance);
+        var numeles = _bufferlen-offset;
+        var elements = new Uint8Array(_buffer, offset, numeles);
+        
+        var newposition = offset+distance;
+        
+        //_bufferview.set(elements, newposition);
+        writeArray(_bufferview, elements, newposition);
+        _bufferlen+=distance;
+
+
+}
+
+function writeArray(array, eles, pos){
+
+        array.set(eles,pos);
+
+}
+
+function printBuffer(){
+
+        ctx.clearRect(0,0,600,400);
+
+        var elements = new Uint8Array(_buffer, 0, _bufferlen);
+        var startline = 0;
+        var linenumber = 0;
+
+        for (var i = 0; i < _bufferlen; i++){
+                //console.log(elements[i]);
+                if (elements[i] === 10){
+
+                        var line = getLine(startline, i-startline);
+                        ctx.fillText(line,10,linenumber*LINEHEIGHT+LINEHEIGHT);
+                        startline=i+1;
+                        linenumber++;
+                }
+        }
+
+        var out = String.fromCharCode.apply(null, elements);
+        //console.log(out);
+
+        
+       
+
+}
+
+function getLine(start, length){
+
+        var line = new Uint8Array(_buffer, start, length);
+        var out = String.fromCharCode.apply(null, line);
+
+        return out;
+        //ctx.fillText(out,10,50);
+
+}
+
+function testInsert(){
+
+        printBuffer();
+        var starttime = Date.now();
+
+        insertAtCursor(56);
+        insertAtCursor(56);
+        insertAtCursor(56);
+        insertAtCursor(56);
+        insertAtCursor(56);
+        insertAtCursor(56);
+        insertAtCursor(56);
+    
+        printBuffer();
+
+        deleteAtCursor(3);
+
+        var endtime = Date.now();
+
+        console.log(endtime- starttime);
+        printBuffer();
+}
+
+
+
+function changeIndent(){
+
+        var linestart = currentLineStart();
+        console.log("Q?" + linestart + " FF : " + _cursorpos);
+        var temp = (_cursorpos-linestart) % INDENTSIZE;
+
+        
+        var spacestoadd = INDENTSIZE - temp;
+
+        console.log("new spaces : " + spacestoadd);
+
+        for (var i = 0; i < spacestoadd; i++){
+
+                insertAtCursor(0x20);
+        }
+
+}
+
+//^ 0
+//000000^ 8
+//0000000000000000^ 16
+
+function currentLineStart(){
+
+        var i = _cursorpos - 1;
+
+        while (i>=0 && _bufferview[i] != 0x0A){
+
+                i--;
+        }
+
+        return ++i;
+}
+
+function deleteAtCursor(count){
+
+        count = count || 1;
+
+        if (_cursorpos < count){
+                return;
+        }
+
+
+        shiftElements(_cursorpos, -count);
+        _cursorpos-=count;
+        
+
+}
+
+function insertAtCursor(ele){
+
+        shiftElements(_cursorpos, 1);
+        insertEle(ele, _cursorpos);
+        _cursorpos++;
+}
+
+
+function runCommand(){
+
+        
+}
+
+function integrateCommand(command){
+
+
+        var temp = _inputbuffer.getIterator();
+
+        if (temp === null || temp.command.time < command.time){
+
+                _inputbuffer.push(comm);
+                runCommand(command);
+                return;
+        }
+
+        
+        rewindReplay(temp, command);
+        
+        /*while stack.peek.time > command.time
+        {
+        -> pop + rewind
+        }
+        
+        then:
+        -> push + play new command
+        -> push + play all rewound commands
+
+
+*/
+}
+
+function rewindReplay(node, command){
+
+        
+
+        rewind(node.command);
+
+        if (node.next===null || node.command.time < command.time){
+
+                _inputbuffer.insertAfter(node, command);
+
+                rewind(node.command);
+                
+                
+        }
+        else{
+
+                rewindReplay(node.next, command);
+                replay(node.command);
+
+        }
+
+}
+
+
+function processCharacter(e){
+
+        insertAtCursor(e);
+
+        console.log("character %d", e);
+}
+
+function processKey(e){
+
+        switch (e){
+
+        case 13://enter
+                insertAtCursor(0x0A);
+                break;
+        case 46://delete       
+        case 8://backspace   
+                deleteAtCursor(1);
+                break;
+        case 9: //tab 
+                changeIndent();
+                break;
+        default:
+                console.log("unknown command %d", e);
+
+        }
+
+        console.log("command %d", e);
+}
+
+function processInput(){
+
+        
+}
+
+function bufferInput(){
+
+        var time = Date.now()-timeoffset;
+
+        var node = new InputBufferNode(char, index, time);
+}
+
+function Command(time, char, index){
+
+        this.time = time;
+        this.char = char;
+        this.index = index;
+
+}
+
+function CommandStack(){
+
+        var head = null;
+        var tail = null;
+
+        function Node(command){
+
+                this.prev = null;
+                this.next = null;
+                this.command = command;
+
+        };
+
+        function _insertAfter(node, newnode){
+
+                newnode.next = node.next;
+                node.next = newnode;
+
+        };
+
+        function insertFirst(newNode){
+
+                if (head === null){
+
+                        head = newNode;
+
+                }
+                else{
+
+                        newNode.next = head;
+                        head = newNode;
+
+                }
+
+        };
+
+        function rewindReplay(node, newnode){
+
+                if (newnode.command.time < node.command.time){
+                        rewind(node.command);
+                        rewindReplay(node.next, newnode);
+                        replay(node.command);
+                }
+
+        }
+
+        function removeFirst(){
+
+                var temp = head;
+                head = head.next;
+                return temp;
+
+        };
+
+        this.insertAfter = function(node, command){
+
+                var temp = new Node(command);
+                _insertAfter(node, temp);
+        };
+
+        this.push = function(command){
+
+                var temp = new Node(command);
+                insertFirst(temp);
+
+        };
+
+        this.pop = function(){
+
+                var out = removeFirst();
+
+                return out.command;
+        };
+
+        this.peek = function(){
+
+                if (head !== null){
+                        return head.command;
+                }
+                else{
+                        return null;
+                }
+
+        };
+
+        this.getIterator = function(){
+
+                return head;
+
+        };
+
+
+
+
+        this.insert=function(command){
+
+                var newNode = new Node(command);
+
+                var node = head;
+                var prevnode = null;
+
+
+                while (node != null && 
+                        newNode.command.time < node.command.time){
+
+                        prevnode = node;
+                        node = node.next;
+                }
+
+                if (prevnode === null){
+
+                        head = newNode;
+                        newNode.next = node;
+                }
+                else{
+                        prevnode.next = newNode;
+                        newNode.next = node;
+                }
+
+              
+
+
+        };
+
+
+        
+        //[char, time]
+}
+
+$(document).on("keypress", function (e){
+
+        e.preventDefault();
+        e.which>=32 ? processCharacter(e.which) : processKey(e.keyCode);
+        
+        printBuffer();
+
+});
+
+testInsert();
+
+
+</script>
+
+</body>
+</html>
