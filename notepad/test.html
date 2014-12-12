@@ -11,11 +11,15 @@
 var DELETE = 0;
 var INSERT = 1;
 
+var myid = 0;
+
+var pointers = [];
 var buffer = [];
-var lastindex = -1;
+var lastindex = 0;
 var time = 0;
-var commandQueue = [];
-var pointer = -1;
+var commandQueue = new CommandQueue();
+pointers[myid] = 0;
+
 
 
 function skip(distance){
@@ -23,25 +27,41 @@ function skip(distance){
         
 }
 
+function adjustPointers(distance, index){
+
+        for (var i = 0; i<pointers.length; i++){
+
+                if (pointers[i] >= index){
+                        //console.log("Shift pointer %d", distance);
+                        pointers[i] += distance;
+                }
+        }
+}
+
 function insert(number, index){
 
-       rightShift(index);
-       buffer[index]=number;
-       lastindex++;
+        console.log("insert index : " + index);
+        rightShift(index);
+        buffer[index]=number;
+        lastindex++;
+        adjustPointers(1, index);
 
 }
 
 function remove(index){
 
+        console.log("removing at index %d..", index);
         var removed = buffer[index];
         leftShift(index);
+        buffer[lastindex] = null;
         lastindex--;
+        //adjustPointers(-1, index);
 }
 
 
 function rightShift(index){
 
-        for(var i = lastindex+1; i> index; i--){
+        for(var i = lastindex; i> index; i--){
 
                 buffer[i] = buffer[i-1];
 
@@ -51,23 +71,205 @@ function rightShift(index){
 
 function leftShift(index){
 
-        for(var i = index; i< lastindex; i++){
+        for(var i = index+1; i< lastindex; i++){
 
-                buffer[i] = buffer[i+1];
+                buffer[i-1] = buffer[i];
 
         }
 
 }
 
-function test(){
+function execute(command){
 
-        commandQueue.push([INSERT, ]);
+        if (command[0] & INSERT){
+                insert(command[3], pointers[command[1]]);
 
-        //commandQueue.shift()
+        }
+}
+
+function rewind(command){
+        console.log("rewind");
+        if (command[0] & INSERT){
+                adjustPointers(-1, pointers[command[1]]);
+                remove(pointers[command[1]]);
+
+        }
+        
+}
+
+function insertIntoQueue(command){
+
+        var node = commandQueue.peek();
+
+        if (node===null||command[2]>node.command[2]){
+
+                if (node===null){
+
+                }
+                else{
+                //console.log("push to head cause %d is greater than %d", command[2], node.command[2]);
+                }
+                commandQueue.push(command);
+                execute(command);
+                return 0;
+        }
+
+        rewind(node.command);
+        console.log("%d is less than %d", command[2], node.next.command[2]);
+        while (node.next !==null && command[2]<node.next.command[2]){
+        console.log("yes");
+                
+                node = node.next;
+                rewind(node.command);
+                console.log("%d is less than %d", command[2], node.next.command[2]);
+        }
+
+        commandQueue.insertAfter(node, command);
+        execute(command);
+
+        while(node!==null){
+
+                execute(node.command);
+                node = node.prev;
+
+        }
 
 }
 
+function printBuffer(){
+        var str = '[';
+        for (var i = 0; i<lastindex; i++){
+                str+=buffer[i];
+                str+=', ';
+        }
 
+        str+= ']';
+
+        console.log(str);
+}
+
+function printQueue(){
+        var str = '[';
+        var head = commandQueue.peek();
+        while(head){
+                str+=head.command[3]
+                str+=', ';
+                head=head.next;
+        }
+
+        str+= ']';
+
+        console.log(str);
+}
+
+function runtest(){
+        //type, id, time, number
+        
+        printBuffer();
+       
+        insertIntoQueue([INSERT, myid, 0, 5]);
+        printBuffer();
+        printQueue();
+        insertIntoQueue([INSERT, myid, 1, 5]);
+        printBuffer();
+        printQueue();
+        insertIntoQueue([INSERT, myid, 4, 5]);
+        printBuffer();
+        printQueue();
+        insertIntoQueue([INSERT, myid, 5, 5]);
+        printBuffer();
+        printQueue();
+        insertIntoQueue([INSERT, myid, 6, 5]);
+        printBuffer();
+        printQueue();
+        insertIntoQueue([INSERT, myid, 2, 6]);
+        printBuffer();
+        printQueue();
+        insertIntoQueue([INSERT, myid, 3, 7]);
+
+        printBuffer();
+        printQueue();
+        
+        console.log("expected output : [5, 5, 6, 7, 5, 5, 5]");
+    
+
+}
+
+function Node(command){
+
+        this.next=null;
+        this.prev=null;
+        this.command=command;
+}
+
+function CommandQueue(){
+
+       
+        var head = null;
+
+        var _insertAfter = function(node, newnode){
+
+             
+
+                if (node.next !== null){
+
+                        node.next.prev = newnode;
+
+                }
+
+                newnode.next = node.next;
+                
+                newnode.prev = node;
+                node.next = newnode;
+
+              
+                //node = newnode;
+
+        };
+
+
+
+        this.push = function(command){
+
+                var temp = new Node(command);
+
+                if (head===null){
+
+                        head = temp;
+                        //temp.prev = null;
+                        //temp.next=null;
+
+                }
+                else{
+                       
+                       temp.next = head;
+                       head.prev = temp;
+                       head = temp;
+
+                }
+
+                
+
+        };
+
+        this.insertAfter = function(node, command){
+
+               var temp = new Node(command);
+
+               _insertAfter(node, temp);
+
+
+        };
+
+        this.peek = function(){
+
+                return head;
+        };
+
+
+}
+
+runtest();
 
 </script>
 </body>
