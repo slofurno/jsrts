@@ -1,0 +1,75 @@
+<html>
+<head>
+<title></title>
+<meta charset="utf-8" />
+
+</head>
+<body>
+
+<script>
+
+var DELETE = 0;
+var INSERT = 1;
+
+var buffer = [];
+var lastindex = -1;
+var time = 0;
+var commandQueue = [];
+var pointer = -1;
+
+
+function skip(distance){
+
+        
+}
+
+function insert(number, index){
+
+       rightShift(index);
+       buffer[index]=number;
+       lastindex++;
+
+}
+
+function remove(index){
+
+        var removed = buffer[index];
+        leftShift(index);
+        lastindex--;
+}
+
+
+function rightShift(index){
+
+        for(var i = lastindex+1; i> index; i--){
+
+                buffer[i] = buffer[i-1];
+
+        }
+
+}
+
+function leftShift(index){
+
+        for(var i = index; i< lastindex; i++){
+
+                buffer[i] = buffer[i+1];
+
+        }
+
+}
+
+function test(){
+
+        commandQueue.push([INSERT, ]);
+
+        //commandQueue.shift()
+
+}
+
+
+
+</script>
+</body>
+
+</html>
