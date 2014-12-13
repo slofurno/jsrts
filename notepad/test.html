@@ -2,7 +2,7 @@
 <head>
 <title></title>
 <meta charset="utf-8" />
-
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 </head>
 <body>
 
@@ -44,7 +44,7 @@ function insert(number, index){
         rightShift(index);
         buffer[index]=number;
         lastindex++;
-        adjustPointers(1, index);
+        
 
 }
 
@@ -55,10 +55,11 @@ function remove(index){
         leftShift(index);
         buffer[lastindex] = null;
         lastindex--;
-        //adjustPointers(-1, index);
+        return removed;
+        
 }
 
-
+//AAAAAAAAAB
 function rightShift(index){
 
         for(var i = lastindex; i> index; i--){
@@ -81,17 +82,50 @@ function leftShift(index){
 
 function execute(command){
 
-        if (command[0] & INSERT){
-                insert(command[3], pointers[command[1]]);
+        var index = pointers[command[1]];
+
+        switch (command[0]){
+
+        case INSERT:
+                insert(command[3], index);
+                adjustPointers(1, index);
+                break;
+
+        case DELETE:
+                printBuffer();
+                adjustPointers(-1, index);
+                index = pointers[command[1]];
+                command[3] = remove(index);
+                console.log("-----------delete %d at %d", command[3], index);
+                
+                break;
 
         }
+
+
 }
 
 function rewind(command){
         console.log("rewind");
-        if (command[0] & INSERT){
-                adjustPointers(-1, pointers[command[1]]);
-                remove(pointers[command[1]]);
+        var index = pointers[command[1]];
+
+        switch (command[0]){
+
+        case INSERT:
+                adjustPointers(-1, index);
+                index = pointers[command[1]];
+                remove(index);
+                break;
+
+        case DELETE:
+                printBuffer();
+                
+                index = pointers[command[1]];
+                console.log("--------------undo delete %d at %d", command[3], index);
+                
+                insert(command[3], index);
+                adjustPointers(1, index);
+                break;
 
         }
         
@@ -115,13 +149,13 @@ function insertIntoQueue(command){
         }
 
         rewind(node.command);
-        console.log("%d is less than %d", command[2], node.next.command[2]);
+        //console.log("%d is less than %d", command[2], node.next.command[2]);
         while (node.next !==null && command[2]<node.next.command[2]){
-        console.log("yes");
+        //console.log("yes");
                 
                 node = node.next;
                 rewind(node.command);
-                console.log("%d is less than %d", command[2], node.next.command[2]);
+                //console.log("%d is less than %d", command[2], node.next.command[2]);
         }
 
         commandQueue.insertAfter(node, command);
@@ -169,26 +203,32 @@ function runtest(){
        
         insertIntoQueue([INSERT, myid, 0, 5]);
         printBuffer();
-        printQueue();
+        //printQueue();
         insertIntoQueue([INSERT, myid, 1, 5]);
         printBuffer();
-        printQueue();
-        insertIntoQueue([INSERT, myid, 4, 5]);
-        printBuffer();
-        printQueue();
+        //printQueue();
         insertIntoQueue([INSERT, myid, 5, 5]);
         printBuffer();
-        printQueue();
+        //printQueue();
         insertIntoQueue([INSERT, myid, 6, 5]);
         printBuffer();
-        printQueue();
+        //printQueue();
+        insertIntoQueue([DELETE, myid, 4, -1]);
+        printBuffer();
+
+        insertIntoQueue([INSERT, myid, 7, 5]);
+        printBuffer();
+        //printQueue();
         insertIntoQueue([INSERT, myid, 2, 6]);
         printBuffer();
-        printQueue();
+        //printQueue();
         insertIntoQueue([INSERT, myid, 3, 7]);
 
         printBuffer();
-        printQueue();
+        //printQueue();
+
+       
+        //printQueue();
         
         console.log("expected output : [5, 5, 6, 7, 5, 5, 5]");
     
@@ -269,7 +309,49 @@ function CommandQueue(){
 
 }
 
-runtest();
+//runtest();
+
+function sendCommand(t){
+
+        //not
+}
+
+function processKey(e){
+
+        switch (e){
+
+        case 13://enter
+                sendCommand(13);
+                break;
+        case 46://delete       
+        case 8://backspace   
+                insertIntoQueue([DELETE, myid, time, -1]);
+                break;
+        case 9: //tab 
+                sendCommand(9);
+                break;
+        case 37:
+                sendCommand(1);
+                break;
+        case 39:
+                sendCommand(2);
+                break;
+        default:
+                insertIntoQueue([INSERT, myid, time, e]);
+
+        }
+
+        //console.log("command %d", e);
+}
+
+$(document).on("keypress", function (e){
+
+        e.preventDefault();
+        e.which>=32 ? processKey(e.which) : processKey(e.keyCode);
+        time++;
+        printBuffer();
+
+});
 
 </script>
 </body>
