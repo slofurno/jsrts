@@ -7,16 +7,18 @@
 <body>
 
 <script>
+"use strict";
 
 var DELETE = 0;
 var INSERT = 1;
+var SKIP = 2;
 
 var myid = 0;
 
 var pointers = [];
 var buffer = [];
 var lastindex = 0;
-var time = 0;
+var _time = 0;
 var commandQueue = new CommandQueue();
 pointers[myid] = 0;
 
@@ -40,7 +42,7 @@ function adjustPointers(distance, index){
 
 function insert(number, index){
 
-        console.log("insert index : " + index);
+        //console.log("insert index : " + index);
         rightShift(index);
         buffer[index]=number;
         lastindex++;
@@ -50,13 +52,19 @@ function insert(number, index){
 
 function remove(index){
 
-        console.log("removing at index %d..", index);
+        //console.log("removing at index %d..", index);
         var removed = buffer[index];
         leftShift(index);
         buffer[lastindex] = null;
         lastindex--;
         return removed;
         
+}
+
+function skip(id, direction){
+
+        pointers[id] += direction;
+
 }
 
 //AAAAAAAAAB
@@ -96,17 +104,17 @@ function execute(command){
                 adjustPointers(-1, index);
                 index = pointers[command[1]];
                 command[3] = remove(index);
-                console.log("-----------delete %d at %d", command[3], index);
-                
+                //console.log("-----------delete %d at %d", command[3], index);
+                break;        
+        case SKIP:
+                skip(command[1], command[3]);
                 break;
 
         }
-
-
 }
 
 function rewind(command){
-        console.log("rewind");
+        //console.log("rewind");
         var index = pointers[command[1]];
 
         switch (command[0]){
@@ -121,13 +129,17 @@ function rewind(command){
                 printBuffer();
                 
                 index = pointers[command[1]];
-                console.log("--------------undo delete %d at %d", command[3], index);
+                //console.log("--------------undo delete %d at %d", command[3], index);
                 
                 insert(command[3], index);
                 adjustPointers(1, index);
                 break;
 
+        case SKIP:
+                skip(command[1], -command[3]);
+                break;
         }
+
         
 }
 
@@ -172,12 +184,15 @@ function insertIntoQueue(command){
 
 function printBuffer(){
         var str = '[';
+
+
         for (var i = 0; i<lastindex; i++){
-                str+=buffer[i];
+                str+=String.fromCharCode(buffer[i]);
+                //str+=(buffer[i]);
                 str+=', ';
         }
 
-        str+= ']';
+        str+= '] , cursor : ' + pointers[myid];
 
         console.log(str);
 }
@@ -196,41 +211,41 @@ function printQueue(){
         console.log(str);
 }
 
+
 function runtest(){
         //type, id, time, number
         
-        printBuffer();
-       
-        insertIntoQueue([INSERT, myid, 0, 5]);
-        printBuffer();
-        //printQueue();
-        insertIntoQueue([INSERT, myid, 1, 5]);
-        printBuffer();
-        //printQueue();
-        insertIntoQueue([INSERT, myid, 5, 5]);
-        printBuffer();
-        //printQueue();
-        insertIntoQueue([INSERT, myid, 6, 5]);
-        printBuffer();
-        //printQueue();
-        insertIntoQueue([DELETE, myid, 4, -1]);
+        processKey(113, 0); //q
+        processKey(119, 1); //w
+        processKey(101, 2); //e
+        processKey(114, 3); //r
+        processKey(116, 4); //t
+
+//qssssyuiowert
+        processKey(121, 13);
+        processKey(117, 14);
+        processKey(105, 15);
+        processKey(111, 16);
+
+        processKey(37, 5);
+        processKey(37, 6);
+        processKey(37, 7);
+        processKey(37, 8);
+
+        processKey(115, 9);
+        processKey(115, 10);
+        processKey(115, 11);
+        processKey(115, 12);
+
+        _time = 17;
         printBuffer();
 
-        insertIntoQueue([INSERT, myid, 7, 5]);
-        printBuffer();
-        //printQueue();
-        insertIntoQueue([INSERT, myid, 2, 6]);
-        printBuffer();
-        //printQueue();
-        insertIntoQueue([INSERT, myid, 3, 7]);
+        console.log("[q, s, s, s, s, y, u, i, o, w, e, r, t, ]");
 
-        printBuffer();
-        //printQueue();
 
-       
-        //printQueue();
-        
-        console.log("expected output : [5, 5, 6, 7, 5, 5, 5]");
+
+        //37 39 left right
+        //46 delete
     
 
 }
@@ -309,14 +324,16 @@ function CommandQueue(){
 
 }
 
-//runtest();
+runtest();
 
 function sendCommand(t){
 
         //not
 }
 
-function processKey(e){
+function processKey(e, time){
+
+        time = time || _time;
 
         switch (e){
 
@@ -331,16 +348,22 @@ function processKey(e){
                 sendCommand(9);
                 break;
         case 37:
-                sendCommand(1);
+                insertIntoQueue([SKIP, myid, time, -1]);
                 break;
         case 39:
-                sendCommand(2);
+                insertIntoQueue([SKIP, myid, time, 1]);
                 break;
+                /*
+        case 53:
+                insertIntoQueue([INSERT, myid, 50, e]);
+                break;
+                */
         default:
                 insertIntoQueue([INSERT, myid, time, e]);
 
         }
 
+        
         //console.log("command %d", e);
 }
 
@@ -348,8 +371,9 @@ $(document).on("keypress", function (e){
 
         e.preventDefault();
         e.which>=32 ? processKey(e.which) : processKey(e.keyCode);
-        time++;
+        
         printBuffer();
+        _time++;
 
 });
 
