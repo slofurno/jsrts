@@ -9,6 +9,10 @@
 <script>
 "use strict";
 
+
+
+
+
 var DELETE = 0;
 var INSERT = 1;
 var SKIP = 2;
@@ -20,14 +24,16 @@ var buffer = [];
 var lastindex = 0;
 var _time = 0;
 var commandQueue = new CommandQueue();
-pointers[myid] = 0;
+pointers[0] = 0;
+pointers[1] = 0;
+pointers[2] = 0;
+pointers[3] = 0;
+pointers[4] = 0;
+pointers[5] = 0;
+pointers[6] = 0;
+pointers[7] = 0;
+pointers[8] = 0;
 
-
-
-function skip(distance){
-
-        
-}
 
 function adjustPointers(distance, index){
 
@@ -201,7 +207,7 @@ function printQueue(){
         var str = '[';
         var head = commandQueue.peek();
         while(head){
-                str+=head.command[3]
+                str+=head.command[3];
                 str+=', ';
                 head=head.next;
         }
@@ -324,7 +330,19 @@ function CommandQueue(){
 
 }
 
-runtest();
+function processCommand(command){
+
+        var out = JSON.stringify(command);
+        console.log("Sending : " + out);
+        //conn.send("hhh");
+        conn.send(out);
+        insertIntoQueue(command);
+
+
+}
+
+
+
 
 function sendCommand(t){
 
@@ -333,25 +351,26 @@ function sendCommand(t){
 
 function processKey(e, time){
 
-        time = time || _time;
+        time = Date.now();
 
         switch (e){
 
         case 13://enter
+                processCommand([INSERT, myid, time, 0x0A]);
                 sendCommand(13);
                 break;
         case 46://delete       
         case 8://backspace   
-                insertIntoQueue([DELETE, myid, time, -1]);
+                processCommand([DELETE, myid, time, -1]);
                 break;
         case 9: //tab 
                 sendCommand(9);
                 break;
         case 37:
-                insertIntoQueue([SKIP, myid, time, -1]);
+                processCommand([SKIP, myid, time, -1]);
                 break;
         case 39:
-                insertIntoQueue([SKIP, myid, time, 1]);
+                processCommand([SKIP, myid, time, 1]);
                 break;
                 /*
         case 53:
@@ -359,7 +378,7 @@ function processKey(e, time){
                 break;
                 */
         default:
-                insertIntoQueue([INSERT, myid, time, e]);
+                processCommand([INSERT, myid, time, e]);
 
         }
 
@@ -376,6 +395,47 @@ $(document).on("keypress", function (e){
         _time++;
 
 });
+
+
+var conn = new WebSocket("ws://localhost:555/");
+
+conn.onopen = function(event) {
+//conn.send('something');
+};
+
+conn.onmessage = function (event) {
+
+        //console.log("rec : " + event.data);
+
+        var packet = JSON.parse(event.data);
+
+
+        switch(packet[0]){
+
+        case 0:
+                
+                myid = packet[1];
+                        
+                break;
+        case 1:
+                var command = [packet[1], packet[2], packet[3], packet[4]];
+                console.log("update com : " + command);
+
+                //console.log("rec update..." + update.d);
+                if (command[1] !== myid){
+                        console.log("inserting...");
+                        insertIntoQueue(command);
+                        printBuffer();
+                }
+                break;
+        }
+       
+
+        //console.log(command);
+};
+
+//runtest();
+
 
 </script>
 </body>
