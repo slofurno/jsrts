@@ -11,17 +11,27 @@
 
 
 
+var LINEWIDTH = 80;
+var INDENTSIZE = 8;
+var BUFFERMAX = 400;
+var LINEHEIGHT = 20;
 
+var _topoffset = 0;
+var _bufferlen = 1;
+
+var _buffer = new ArrayBuffer(BUFFERMAX);
+var _bufferview = new Uint8Array(_buffer);
+
+_bufferview[0] = 0x0A;
 
 var DELETE = 0;
 var INSERT = 1;
 var SKIP = 2;
 
 var myid = 0;
-
 var pointers = [];
-var buffer = [];
-var lastindex = 0;
+
+
 var _time = 0;
 var commandQueue = new CommandQueue();
 pointers[0] = 0;
@@ -46,12 +56,19 @@ function adjustPointers(distance, index){
         }
 }
 
+function writeBuffer(eles, offset){
+
+        _bufferview.set(eles,offset);
+}
+
 function insert(number, index){
 
         //console.log("insert index : " + index);
         rightShift(index);
-        buffer[index]=number;
-        lastindex++;
+        //buffer[index]=number;
+        writeBuffer([number], index);
+      
+        //_bufferlen++;
         
 
 }
@@ -61,8 +78,7 @@ function remove(index){
         //console.log("removing at index %d..", index);
         var removed = buffer[index];
         leftShift(index);
-        buffer[lastindex] = null;
-        lastindex--;
+        //_bufferlen--;
         return removed;
         
 }
@@ -74,23 +90,31 @@ function skip(id, direction){
 }
 
 //AAAAAAAAAB
+
+function bufferShift(offset, distance){
+
+        //console.log("offset : %d, distance: %d", offset, distance);
+        var numeles = _bufferlen-offset;
+        var elements = new Uint8Array(_buffer, offset, numeles);
+        
+        var newposition = offset+distance;
+        
+        //_bufferview.set(elements, newposition);
+
+        writeBuffer(elements, newposition);
+        _bufferlen+=distance;
+
+
+}
+
 function rightShift(index){
 
-        for(var i = lastindex; i> index; i--){
-
-                buffer[i] = buffer[i-1];
-
-        }
-
+        bufferShift(index, 1);
 }
 
 function leftShift(index){
 
-        for(var i = index+1; i< lastindex; i++){
-
-                buffer[i-1] = buffer[i];
-
-        }
+        bufferShift(index, -1);
 
 }
 
@@ -169,7 +193,7 @@ function insertIntoQueue(command){
         rewind(node.command);
         //console.log("%d is less than %d", command[2], node.next.command[2]);
         while (node.next !==null && command[2]<node.next.command[2]){
-        //console.log("yes");
+        
                 
                 node = node.next;
                 rewind(node.command);
@@ -189,18 +213,11 @@ function insertIntoQueue(command){
 }
 
 function printBuffer(){
-        var str = '[';
 
-
-        for (var i = 0; i<lastindex; i++){
-                str+=String.fromCharCode(buffer[i]);
-                //str+=(buffer[i]);
-                str+=', ';
-        }
-
-        str+= '] , cursor : ' + pointers[myid];
-
-        console.log(str);
+        var temp = new Uint8Array(_buffer, 0, _bufferlen);
+        var out = String.fromCharCode.apply(null, temp);
+        console.log(out);
+        console.log("cursor pos: %d", pointers[myid]);
 }
 
 function printQueue(){
@@ -214,7 +231,7 @@ function printQueue(){
 
         str+= ']';
 
-        console.log(str);
+        //console.log(str);
 }
 
 
@@ -246,7 +263,7 @@ function runtest(){
         _time = 17;
         printBuffer();
 
-        console.log("[q, s, s, s, s, y, u, i, o, w, e, r, t, ]");
+        //console.log("[q, s, s, s, s, y, u, i, o, w, e, r, t, ]");
 
 
 
@@ -333,7 +350,7 @@ function CommandQueue(){
 function processCommand(command){
 
         var out = JSON.stringify(command);
-        console.log("Sending : " + out);
+        //console.log("Sending : " + out);
         //conn.send("hhh");
         conn.send(out);
         insertIntoQueue(command);
@@ -396,8 +413,9 @@ $(document).on("keypress", function (e){
 
 });
 
-
-var conn = new WebSocket("ws://localhost:555/");
+//212.47.239.127
+var conn = new WebSocket("ws://212.47.239.127:555/");
+//var conn = new WebSocket("ws://localhost:555/");
 
 conn.onopen = function(event) {
 //conn.send('something');
@@ -419,11 +437,11 @@ conn.onmessage = function (event) {
                 break;
         case 1:
                 var command = [packet[1], packet[2], packet[3], packet[4]];
-                console.log("update com : " + command);
+                //console.log("update com : " + command);
 
                 //console.log("rec update..." + update.d);
                 if (command[1] !== myid){
-                        console.log("inserting...");
+                        //console.log("inserting...");
                         insertIntoQueue(command);
                         printBuffer();
                 }
